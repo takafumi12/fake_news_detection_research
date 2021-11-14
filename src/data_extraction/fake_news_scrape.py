@@ -39,7 +39,7 @@ def fake_news_from_fij_scraping(r):
 def get_fake_twitte_data(url):
     r = get_web_page(url)
     fake_twitter_text_list = fake_news_from_fij_scraping(r)
-    data_path = os.path.join('../data', f'{datetime.date.today()}', 'scrapring_data', f'fake_twitter_text_list.pkl')
+    data_path = os.path.join('../data', f'{datetime.date.today()}', 'scraping_data', f'fake_twitter_text_list.pkl')
     print(data_path)
     Util.dump(fake_twitter_text_list, data_path)
 

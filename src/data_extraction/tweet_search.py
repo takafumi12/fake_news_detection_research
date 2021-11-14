@@ -19,7 +19,7 @@ query_params = {
     'query': '',
     'start_time':'2019-01-01T00:00:00Z',
     'tweet.fields': 'conversation_id,in_reply_to_user_id,author_id,created_at',
-    'max_results':100}
+    'max_results':1000}
 
 
 def bearer_oauth(r):
@@ -39,8 +39,8 @@ def connect_to_endpoint(url, params):
     return response.json()
 
 
-def get_twitter_data(data_path):
-    target_list = Util.load(data_path)
+def get_twitter_data(input_data_path, output_data_dir):
+    target_list = Util.load(input_data_path)
     # df = pd.DataFrame(colums=['text', 'author_id', 'conversation_id', 'id', 'created_at', 'in_reply_to_user_id'])
 
     df = None
@@ -54,6 +54,7 @@ def get_twitter_data(data_path):
         print(json.dumps(json_response, indent=4, sort_keys=True, ensure_ascii=False))
         if json_response['meta']['result_count'] != 0:
             df_tmp = pd.json_normalize(json_response['data'])
+            df_tmp['kw'] = target
 
             if df is None:
                 df = df_tmp
@@ -61,6 +62,7 @@ def get_twitter_data(data_path):
                 df = pd.concat([df, df_tmp])
         else:
             pass
-    data_path = os.path.join('../data', f'{datetime.date.today()}', 'scrapring_data', f'fake_twitter_text_list.pkl')
-    Util.dump(df, data_path)
-    df.to_csv('/Users/kanekotakafumi/github/fake_news_detection_research/data/tweet_data/tweet_data.csv',  index=False)
+    data_path_pkl = os.path.join('../data', 'scraping_data', f'{output_data_dir}', 'tweet_data.pkl')
+    Util.dump(df, data_path_pkl)
+    data_path_csv = os.path.join('../data', 'scraping_data', f'{output_data_dir}', 'tweet_data.csv')
+    df.to_csv(data_path_csv, index=False)
