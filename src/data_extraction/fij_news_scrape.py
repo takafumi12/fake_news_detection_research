@@ -1,5 +1,4 @@
 import os
-import datetime
 import re
 import sys
 import requests
@@ -19,28 +18,32 @@ def get_web_page(url):
 
 def fake_news_from_fij_scraping(r):
     fake_twitter_text_list = []
+    fake_twitter_text_dict = {}
     soup = BeautifulSoup(r.text, "html.parser")
     for a in soup.select('blockquote > p > strong'):
-        fake_twitter_text = re.sub(r'</?strong>', '', str(a))
-        fake_twitter_text = re.sub(r'（.*）', '', fake_twitter_text)
+        fake_twitter_text_original = re.sub(r'</?strong>', '', str(a))
+        fake_twitter_text = re.sub(r'（.*）', '', fake_twitter_text_original)
         fake_twitter_text = re.sub(r'\(.*）', '', fake_twitter_text)
         fake_twitter_text = re.sub(r'（.*\)', '', fake_twitter_text)
         fake_twitter_text = fake_twitter_text.replace(r'○', '')
         fake_twitter_text = fake_twitter_text.replace(r' ／ ', ' ')
         tmp_list = fake_twitter_text.split()
+        fake_twitter_text_dict[fake_twitter_text_original] = tmp_list
         for tmp in tmp_list:
             fake_twitter_text_list.append(tmp)
 
     print(fake_twitter_text_list)
     print(len(fake_twitter_text_list))
 
-    return fake_twitter_text_list
+    return fake_twitter_text_list, fake_twitter_text_dict
 
 def get_fake_twitte_data(url):
     r = get_web_page(url)
-    fake_twitter_text_list = fake_news_from_fij_scraping(r)
-    data_path = os.path.join('../data', f'{datetime.date.today()}', 'scraping_data', f'fake_twitter_text_list.pkl')
-    print(data_path)
-    Util.dump(fake_twitter_text_list, data_path)
+    fake_twitter_text_list, fake_twitter_text_dict = fake_news_from_fij_scraping(r)
+    data_path_list = os.path.join('../data', 'scraping_data', 'fij_news_data',f'fake_twitter_text_list.pkl')
+    print(data_path_list)
+    Util.dump(fake_twitter_text_list, data_path_list)
+    data_path_dict = os.path.join('../data', 'scraping_data', 'fij_news_data',f'fake_twitter_text_dict.pkl')
+    Util.dump(fake_twitter_text_dict, data_path_dict)
 
-    return data_path
+    return data_path_list

@@ -19,7 +19,7 @@ query_params = {
     'query': '',
     'start_time':'2019-01-01T00:00:00Z',
     'tweet.fields': 'conversation_id,in_reply_to_user_id,author_id,created_at',
-    'max_results':1000}
+    'max_results':500}
 
 
 def bearer_oauth(r):
@@ -32,10 +32,22 @@ def bearer_oauth(r):
     return r
 
 def connect_to_endpoint(url, params):
+    CONNECTION_RETRY = 5
     response = requests.get(url, auth=bearer_oauth, params=params)
     print(response.status_code)
-    if response.status_code != 200:
+    if response.status_code != 200 and response.status_code != 429:
         raise Exception(response.status_code, response.text)
+    elif response.status_code == 429:
+        time.sleep(60)
+        for i in range(1, CONNECTION_RETRY + 1):
+            response = requests.get(url, auth=bearer_oauth, params=params)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print("retry:{i}/{max}".format(i=i, max=CONNECTION_RETRY))
+                time.sleep(i * 60)
+        if response.status_code == 429:
+            raise Exception(response.status_code, response.text)
     return response.json()
 
 
@@ -49,6 +61,7 @@ def get_twitter_data(input_data_path, output_data_dir):
         print(target)
         query_params['query'] = target
         print(query_params)
+        time.sleep(1)
         json_response = connect_to_endpoint(search_url, query_params)
         time.sleep(1)
         print(json.dumps(json_response, indent=4, sort_keys=True, ensure_ascii=False))
