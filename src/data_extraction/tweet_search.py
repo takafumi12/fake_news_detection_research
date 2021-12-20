@@ -50,6 +50,25 @@ def connect_to_endpoint(url, params):
             raise Exception(response.status_code, response.text)
     return response.json()
 
+def mk_dataframe(df, query_params, target):
+    df_tmp = None
+    time.sleep(1)
+    json_response = connect_to_endpoint(search_url, query_params)
+    time.sleep(1)
+    print(json.dumps(json_response, indent=4, sort_keys=True, ensure_ascii=False))
+    if json_response['meta']['result_count'] != 0:
+        df_tmp = pd.json_normalize(json_response['data'])
+        df_tmp['kw'] = target
+
+        if df is None:
+            df = df_tmp
+        else:
+            df = pd.concat([df, df_tmp])
+    else:
+        pass
+    
+    return df, df_tmp, json_response
+
 
 def get_twitter_data(input_data_path, output_data_dir):
     target_list = Util.load(input_data_path)
@@ -61,20 +80,17 @@ def get_twitter_data(input_data_path, output_data_dir):
         print(target)
         query_params['query'] = target
         print(query_params)
-        time.sleep(1)
-        json_response = connect_to_endpoint(search_url, query_params)
-        time.sleep(1)
-        print(json.dumps(json_response, indent=4, sort_keys=True, ensure_ascii=False))
-        if json_response['meta']['result_count'] != 0:
-            df_tmp = pd.json_normalize(json_response['data'])
-            df_tmp['kw'] = target
+        df, df_tmp, json_response = mk_dataframe(df, query_params, target)
 
-            if df is None:
-                df = df_tmp
-            else:
-                df = pd.concat([df, df_tmp])
-        else:
-            pass
+        if json_response['meta']['result_count'] != 0:
+
+            id_list = df_tmp['conversation_id'].unique().tolist()
+
+            for id in id_list:
+                query_params['query'] = f'conversation_id:{id}'
+                print(query_params)
+                df, _, _ = mk_dataframe(df, query_params, target)
+
     data_path_pkl = os.path.join('../data', 'scraping_data', f'{output_data_dir}', 'tweet_data.pkl')
     Util.dump(df, data_path_pkl)
     data_path_csv = os.path.join('../data', 'scraping_data', f'{output_data_dir}', 'tweet_data.csv')

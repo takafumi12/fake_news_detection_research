@@ -132,3 +132,9 @@ dmypy.json
 *.csv
 *.txt
 *.pkl
+*.zip
+*.bz2
+/rumdect
+/pheme-rnr-dataset
+*.model
+*.npy

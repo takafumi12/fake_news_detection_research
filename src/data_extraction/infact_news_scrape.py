@@ -30,10 +30,12 @@ def link_from_infact_scraping(r):
         r = get_web_page(next_link)
         return link_list + link_from_infact_scraping(r)
 
-def fake_news_from_infact_scraping(r, text_list):
+def fake_news_from_infact_scraping(r, text_list, text_dict):
     soup = BeautifulSoup(r.text, "html.parser")
     text = soup.select("meta[property='og:title']")
     
+    tmp_list = []
+
     print(str(text))
     pattern = '「.*」'
 
@@ -43,30 +45,42 @@ def fake_news_from_infact_scraping(r, text_list):
         result = result.group()
         result = result.replace(r'「', '').replace(r'」', '').replace(r'◉', '')
         text_list.append(result)
+        tmp_list.append(result)
         
     text = soup.select("div[class='box-red']")
     print(str(text))
     
     if text is not None:
         pattern = '<div.*?>|</div>|<span.*?>|</span>|<a.*?>.*?</a>|<br/>|</?strong>|（.*）|\(.*|\[.*|\]|<p>.*|</p>'
-        result = re.sub(pattern, '', str(text))
-        result = result.replace('、',' ').replace(r'◉', '')
-        result_list = [s for s in result.split() if not s.startswith('#') and s != '「……」']
+        result_text = re.sub(pattern, '', str(text))
+        result_text = result_text.replace('、',' ').replace(r'◉', '')
+        result_text_list = [s for s in result_text.split() if not s.startswith('#') and s != '「……」']
         
-        for result in result_list:
-            text_list.append(result)
+        for result_text in result_text_list:
+            text_list.append(result_text)
+            tmp_list.append(result_text)
+
+    if result is not None:
+        text_dict[result] = list(set(tmp_list))
+    elif text is not None:
+        text_dict[result_text] = list(set(tmp_list))
+    else:
+        pass
             
-    return text_list
+    return text_list, text_dict
 
 def get_fake_twitte_data(url):
     r = get_web_page(url)
     link_list = link_from_infact_scraping(r)
     fake_twitter_text_list = []
+    fake_twitter_text_dict = {}
     for link in link_list:
         r = get_web_page(link)
-        fake_twitter_text_list = fake_news_from_infact_scraping(r, fake_twitter_text_list)
-    data_path = os.path.join('../data', 'scraping_data', 'infact_news_data',f'fake_twitter_text_list.pkl')
-    print(data_path)
-    Util.dump(fake_twitter_text_list, data_path)
+        fake_twitter_text_list, fake_twitter_text_dict = fake_news_from_infact_scraping(r, fake_twitter_text_list, fake_twitter_text_dict)
+    data_path_list = os.path.join('../data', 'scraping_data', 'infact_news_data',f'fake_twitter_text_list.pkl')
+    Util.dump(fake_twitter_text_list, data_path_list)
 
-    return data_path
+    data_path_dict = os.path.join('../data', 'scraping_data', 'infact_news_data',f'fake_twitter_text_dict.pkl')
+    Util.dump(fake_twitter_text_dict, data_path_dict)
+
+    return data_path_list
